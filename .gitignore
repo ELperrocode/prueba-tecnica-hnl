@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Data directory (seed data copy — run setup.sh to regenerate)
+data/
+
+# TigerBeetle data
+*.tigerbeetle
+
+# Go
+backend/vendor/
+backend/server
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI Agent — skills & Copilot context (machine-local)
+.copilot/
+.agents/
+.cursor/
+.continue/
+.claude/
+*.skill.md
