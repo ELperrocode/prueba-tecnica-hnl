@@ -44,10 +44,10 @@ services:
       TIGERBEETLE_ADDR: tigerbeetle:3000
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-nvidia/nemotron-3-nano-30b-a3b:free}
     volumes:
-      # Mount seed data into the container (run setup.sh first to create data/seed.json)
-      - ./data/seed.json:/data/seed.json:ro
+      # Seed data — the original JSON from the test is mounted directly (no setup step needed)
+      - "./datos-prueba-HNL (1).json:/data/seed.json:ro"
     depends_on:
       postgres:
         condition: service_healthy

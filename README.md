@@ -16,43 +16,46 @@ Sistema de banca en línea simplificado con soporte para gestión de cuentas, tr
 
 ---
 
+## Demo en Producción
+
+🌐 **https://bancahnl.duckdns.org**
+
+| Email | Contraseña |
+|-------|------------|
+| `ihernandez@email.com` | `Isabel2024!` |
+
+---
+
 ## Requisitos Previos
 
 - Docker >= 24.0
 - Docker Compose >= 2.0
-- Una API key de [OpenRouter](https://openrouter.ai) (para el chat con IA)
 
 ---
 
 ## Inicio Rápido
 
-### 1. Clonar y configurar
-
 ```bash
 git clone <repo-url>
 cd prueba-tecnica
-
-# Copiar variables de entorno
-cp .env.example .env
-# Editar .env y agregar tu OPENROUTER_API_KEY
-
-# Preparar datos de seed
-bash setup.sh
+docker compose up --build
 ```
 
-### 2. Levantar con Docker
+**Eso es todo.** No se necesita ningún paso adicional. El sistema carga los datos de prueba automáticamente al iniciar.
 
-```bash
-docker-compose up --build
-```
+> **Chat IA (opcional):** Para habilitar el asistente de IA, crea un `.env` con tu API key de [OpenRouter](https://openrouter.ai):
+> ```bash
+> cp .env.example .env
+> # Editar .env → poner tu OPENROUTER_API_KEY
+> docker compose up --build
+> ```
 
-### 3. Acceder
+### Acceder
 
 | Servicio | URL |
 |----------|-----|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8080 |
-| TigerBeetle | localhost:3001 |
 
 ---
 
@@ -71,11 +74,13 @@ Para registrar un nuevo usuario, usa el formulario de registro en http://localho
 
 ## Variables de Entorno
 
+Todas las variables tienen defaults funcionales. Solo necesitas `.env` si quieres cambiar algo:
+
 | Variable | Descripción | Default |
 |----------|-------------|---------|
 | `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `postgres` |
 | `JWT_SECRET` | Secreto para firmar JWTs | `change-me-in-production-please` |
-| `OPENROUTER_API_KEY` | API key de OpenRouter (**requerida para chat**) | — |
+| `OPENROUTER_API_KEY` | API key de OpenRouter (**requerida para chat IA**) | *(vacío — chat deshabilitado)* |
 | `OPENROUTER_MODEL` | Modelo de IA a usar | `nvidia/nemotron-3-nano-30b-a3b:free` |
 
 ---
@@ -279,6 +284,7 @@ prueba-tecnica/
 - ✅ Rate limiting en endpoints sensibles (registro: 5/min, login: 10/min, transacciones: 30/min, chat: 20/min)
 - ✅ Exportar historial a CSV (`GET /api/transactions/export`, botón en la UI)
 - ✅ CI/CD con GitHub Actions (build + vet del backend Go, type-check + build + **unit tests** del frontend React)
+- ✅ **Deploy en producción** — https://bancahnl.duckdns.org (DigitalOcean, HTTPS con certificado Let's Encrypt)
 
 ---
 
