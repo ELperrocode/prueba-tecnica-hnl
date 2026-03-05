@@ -73,8 +73,9 @@ func main() {
 	}
 
 	// Initialize services
-	authSvc := services.NewAuthService(db, cfg)
+	// Note: accountSvc must be created before authSvc because Register creates an account.
 	accountSvc := services.NewAccountService(db, tb)
+	authSvc := services.NewAuthService(db, cfg, accountSvc)
 	txnSvc := services.NewTransactionService(db, tb, accountSvc)
 
 	// Initialize MCP tool registry

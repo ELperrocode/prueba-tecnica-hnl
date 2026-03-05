@@ -3,6 +3,8 @@ package services
 import (
 	"errors"
 	"fmt"
+	"log"
+	"math/rand"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,12 +16,19 @@ import (
 )
 
 type AuthService struct {
-	db  *gorm.DB
-	cfg *config.Config
+	db         *gorm.DB
+	cfg        *config.Config
+	accountSvc *AccountService
 }
 
-func NewAuthService(db *gorm.DB, cfg *config.Config) *AuthService {
-	return &AuthService{db: db, cfg: cfg}
+func NewAuthService(db *gorm.DB, cfg *config.Config, accountSvc *AccountService) *AuthService {
+	return &AuthService{db: db, cfg: cfg, accountSvc: accountSvc}
+}
+
+// generateAccountNumber creates a unique account number in the format 4001-XXXX-XXXX-XXXX
+func generateAccountNumber() string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return fmt.Sprintf("4001-%04d-%04d-%04d", r.Intn(10000), r.Intn(10000), r.Intn(10000))
 }
 
 // Register creates a new user and returns a JWT token
@@ -45,6 +54,13 @@ func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse
 
 	if err := s.db.Create(&user).Error; err != nil {
 		return nil, fmt.Errorf("creating user: %w", err)
+	}
+
+	// Create a default checking account for the new user
+	accountNumber := generateAccountNumber()
+	if _, err := s.accountSvc.CreateAccount(user.ID, accountNumber, "checking", "USD"); err != nil {
+		// Non-fatal: user already created, log the error but continue
+		log.Printf("Warning: created user %s but failed to create checking account: %v", user.Email, err)
 	}
 
 	token, err := s.generateToken(user.ID)
