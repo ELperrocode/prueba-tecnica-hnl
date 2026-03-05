@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatDate } from './format'
+import { formatCurrency, formatDate } from '../../utils/format'
 
 describe('formatCurrency', () => {
   it('formats positive numbers as USD', () => {

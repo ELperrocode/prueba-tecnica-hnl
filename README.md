@@ -233,10 +233,13 @@ prueba-tecnica/
 │   └── go.mod
 ├── frontend/
 │   ├── src/
+│   │   ├── __tests__/      # Unit tests (Vitest)
+│   │   │   └── utils/      # Tests for utility functions
 │   │   ├── api/            # Axios API client
-│   │   ├── components/     # Layout, Chat
+│   │   ├── components/     # Layout, Chat, UI primitives
 │   │   ├── contexts/       # AuthContext
 │   │   ├── pages/          # Dashboard, Login, Register, Transactions, History
+│   │   ├── utils/          # format, accounts, transactions helpers
 │   │   └── types.ts        # TypeScript types
 │   ├── Dockerfile
 │   └── nginx.conf
@@ -275,7 +278,7 @@ prueba-tecnica/
 - ✅ Búsqueda y filtros en historial
 - ✅ Rate limiting en endpoints sensibles (registro: 5/min, login: 10/min, transacciones: 30/min, chat: 20/min)
 - ✅ Exportar historial a CSV (`GET /api/transactions/export`, botón en la UI)
-- ✅ CI/CD con GitHub Actions (build + vet del backend Go, type-check + build del frontend React)
+- ✅ CI/CD con GitHub Actions (build + vet del backend Go, type-check + build + **unit tests** del frontend React)
 
 ---
 

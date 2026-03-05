@@ -86,7 +86,7 @@ export default function Chat() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-white">Asistente Bancario IA</p>
-              <p className="text-xs text-violet-200">Powered by MCP · en línea</p>
+              <p className="text-xs text-violet-200">En línea</p>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getTxConfig, TRANSACTION_CONFIG } from './transactions'
+import { getTxConfig, TRANSACTION_CONFIG } from '../../utils/transactions'
 
 describe('getTxConfig', () => {
   it('returns correct config for deposit', () => {

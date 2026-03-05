@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getAccountConfig, ACCOUNT_CONFIG } from './accounts'
+import { getAccountConfig, ACCOUNT_CONFIG } from '../../utils/accounts'
 
 describe('getAccountConfig', () => {
   it('returns correct config for checking', () => {
