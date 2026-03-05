@@ -1,13 +1,11 @@
 # Caddyfile — automatic HTTPS reverse proxy
 #
-# If DOMAIN is a real domain (e.g. banca.example.com):
-#   → Caddy gets a Let's Encrypt certificate automatically
-#
-# If DOMAIN is an IP or "localhost":
-#   → Caddy serves HTTP only (no TLS)
+# Caddy automatically obtains Let's Encrypt certificates for the DOMAIN.
+# For local testing (IP or localhost), uncomment: auto_https off
 
 {$DOMAIN:localhost} {
 	# Frontend (serves the React SPA + proxies /api to backend)
+	# Auto HTTPS enabled — Caddy obtains Let's Encrypt certificate
 	reverse_proxy frontend:80
 
 	# Security headers

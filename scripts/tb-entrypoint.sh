@@ -20,4 +20,5 @@ fi
 echo "Starting TigerBeetle..."
 exec /bin/tigerbeetle start \
     --addresses=0.0.0.0:3000 \
+    --cache-grid=256MiB \
     "$DATA_FILE"

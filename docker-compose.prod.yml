@@ -49,6 +49,7 @@ services:
       context: .
       dockerfile: Dockerfile.tigerbeetle
     restart: always
+    privileged: true
     volumes:
       - tigerbeetle_data:/data
     networks:
@@ -61,6 +62,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+    privileged: true
     environment:
       PORT: 8080
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/banca?sslmode=disable
