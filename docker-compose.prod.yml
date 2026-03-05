@@ -1,0 +1,100 @@
+# Production compose — run with:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Prerequisites:
+#   1. Copy .env.prod.example → .env   and fill in real values
+#   2. Run: bash setup.sh              (creates data/seed.json)
+#   3. Set DOMAIN in .env to your domain (or Droplet IP for testing)
+
+services:
+  # ── Reverse proxy (HTTPS via Let's Encrypt) ────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    depends_on:
+      - frontend
+    networks:
+      - banca-net
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: banca
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - banca-net
+
+  # ── TigerBeetle ───────────────────────────────────────────────────
+  tigerbeetle:
+    build:
+      context: .
+      dockerfile: Dockerfile.tigerbeetle
+    restart: always
+    volumes:
+      - tigerbeetle_data:/data
+    networks:
+      - banca-net
+    # No ports exposed — only reachable internally
+
+  # ── Go backend API ────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/banca?sslmode=disable
+      TIGERBEETLE_ADDR: tigerbeetle:3000
+      JWT_SECRET: ${JWT_SECRET}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-nvidia/nemotron-3-nano-30b-a3b:free}
+    volumes:
+      - ./data/seed.json:/data/seed.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - banca-net
+    # No ports exposed — Caddy proxies via frontend/nginx → backend
+
+  # ── React frontend (nginx) ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - banca-net
+    # No ports exposed — only Caddy is public
+
+volumes:
+  postgres_data:
+  tigerbeetle_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  banca-net:
+    driver: bridge
