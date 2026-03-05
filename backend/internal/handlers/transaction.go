@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/henry/banca-online/internal/models"
 	"github.com/henry/banca-online/internal/services"
@@ -112,4 +115,39 @@ func (h *TransactionHandler) History(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, transactions)
+}
+
+// Export GET /api/transactions/export
+// Returns the user's transaction history as a downloadable CSV file.
+func (h *TransactionHandler) Export(w http.ResponseWriter, r *http.Request) {
+	userID := getUserIDFromCtx(r)
+
+	transactions, err := h.txnSvc.GetTransactionHistory(userID, 1000)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	filename := fmt.Sprintf("historial-%s.csv", time.Now().Format("2006-01-02"))
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	w.WriteHeader(http.StatusOK)
+
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	// Header row
+	writer.Write([]string{"ID", "Tipo", "Cuenta Origen", "Cuenta Destino", "Monto (USD)", "Descripción", "Fecha"})
+
+	for _, txn := range transactions {
+		writer.Write([]string{
+			strconv.FormatUint(txn.ID, 10),
+			txn.Type,
+			txn.FromAccount,
+			txn.ToAccount,
+			fmt.Sprintf("%.2f", txn.Amount),
+			txn.Description,
+			txn.Timestamp,
+		})
+	}
 }

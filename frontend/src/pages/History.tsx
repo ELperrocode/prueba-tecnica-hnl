@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { transactionsApi } from '../api/transactions'
 import type { Transaction } from '../types'
-import { TrendingUp, TrendingDown, ArrowRightLeft, Loader2, Search } from 'lucide-react'
+import { TrendingUp, TrendingDown, ArrowRightLeft, Loader2, Search, Download } from 'lucide-react'
 import Chat from '../components/Chat'
 
 function formatCurrency(amount: number) {
@@ -41,12 +41,34 @@ export default function History() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'deposit' | 'withdrawal' | 'transfer'>('all')
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     transactionsApi.history(100)
       .then(setTransactions)
       .finally(() => setLoading(false))
   }, [])
+
+  async function downloadCSV() {
+    setExporting(true)
+    try {
+      const token = localStorage.getItem('token')
+      const base = import.meta.env.VITE_API_URL || '/api'
+      const res = await fetch(`${base}/transactions/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `historial-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const filtered = transactions.filter(t => {
     if (filter !== 'all' && t.type !== filter) return false
@@ -70,9 +92,19 @@ export default function History() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Historial de Transacciones</h1>
-        <p className="text-gray-500 text-sm mt-1">Todos tus movimientos bancarios</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Historial de Transacciones</h1>
+          <p className="text-gray-500 text-sm mt-1">Todos tus movimientos bancarios</p>
+        </div>
+        <button
+          onClick={downloadCSV}
+          disabled={exporting || loading}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+          {exporting ? 'Exportando...' : 'Exportar CSV'}
+        </button>
       </div>
 
       {/* Stats */}

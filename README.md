@@ -273,6 +273,9 @@ prueba-tecnica/
 - ✅ Paginación en historial de transacciones (`?limit=N`)
 - ✅ Gráficas de balance en el dashboard (Recharts)
 - ✅ Búsqueda y filtros en historial
+- ✅ Rate limiting en endpoints sensibles (registro: 5/min, login: 10/min, transacciones: 30/min, chat: 20/min)
+- ✅ Exportar historial a CSV (`GET /api/transactions/export`, botón en la UI)
+- ✅ CI/CD con GitHub Actions (build + vet del backend Go, type-check + build del frontend React)
 
 ---
 

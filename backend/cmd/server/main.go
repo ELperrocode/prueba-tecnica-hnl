@@ -112,8 +112,8 @@ func main() {
 
 	// Public routes
 	r.Route("/api/auth", func(r chi.Router) {
-		r.Post("/register", authHandler.Register)
-		r.Post("/login", authHandler.Login)
+		r.With(middleware.RateLimit(5, time.Minute)).Post("/register", authHandler.Register)
+		r.With(middleware.RateLimit(10, time.Minute)).Post("/login", authHandler.Login)
 	})
 
 	// Protected routes
@@ -126,12 +126,13 @@ func main() {
 		r.Get("/api/accounts", accountHandler.ListAccounts)
 		r.Get("/api/accounts/{accountNumber}", accountHandler.GetAccount)
 
-		r.Post("/api/transactions/deposit", txnHandler.Deposit)
-		r.Post("/api/transactions/withdraw", txnHandler.Withdraw)
-		r.Post("/api/transactions/transfer", txnHandler.Transfer)
+		r.With(middleware.RateLimit(30, time.Minute)).Post("/api/transactions/deposit", txnHandler.Deposit)
+		r.With(middleware.RateLimit(30, time.Minute)).Post("/api/transactions/withdraw", txnHandler.Withdraw)
+		r.With(middleware.RateLimit(30, time.Minute)).Post("/api/transactions/transfer", txnHandler.Transfer)
 		r.Get("/api/transactions", txnHandler.History)
+		r.Get("/api/transactions/export", txnHandler.Export)
 
-		r.Post("/api/chat", chatHandler.Chat)
+		r.With(middleware.RateLimit(20, time.Minute)).Post("/api/chat", chatHandler.Chat)
 	})
 
 	// Start server
