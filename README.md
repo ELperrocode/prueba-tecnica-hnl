@@ -11,7 +11,7 @@ Sistema de banca en línea simplificado con soporte para gestión de cuentas, tr
 | Base de datos de usuarios | **PostgreSQL** (usuarios y autenticación) |
 | Frontend | **React + Vite + TypeScript** |
 | UI | **Tailwind CSS v4** + Lucide Icons + Recharts |
-| IA / Chat | **MCP Tools** + **OpenRouter** (Claude Sonnet) |
+| IA / Chat | **MCP Tools** + **OpenRouter** (nvidia/nemotron-3-nano-30b-a3b) |
 | Infraestructura | **Docker** + Docker Compose |
 
 ---
@@ -76,7 +76,7 @@ Para registrar un nuevo usuario, usa el formulario de registro en http://localho
 | `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `postgres` |
 | `JWT_SECRET` | Secreto para firmar JWTs | `change-me-in-production-please` |
 | `OPENROUTER_API_KEY` | API key de OpenRouter (**requerida para chat**) | — |
-| `OPENROUTER_MODEL` | Modelo de IA a usar | `anthropic/claude-sonnet-4` |
+| `OPENROUTER_MODEL` | Modelo de IA a usar | `nvidia/nemotron-3-nano-30b-a3b:free` |
 
 ---
 
