@@ -36,7 +36,13 @@ export default function Chat() {
     setLoading(true)
 
     try {
-      const res = await chatApi.send(userMsg.content)
+      // Build history: all exchanged messages (skip the initial greeting) before this one
+      const history = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(1) // skip initial greeting
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+
+      const res = await chatApi.send(userMsg.content, history)
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: res.response,

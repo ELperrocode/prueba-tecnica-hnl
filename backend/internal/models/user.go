@@ -96,9 +96,16 @@ type TransactionResponse struct {
 	Timestamp   string  `json:"timestamp"`
 }
 
+// ChatMessage represents a single message in the chat history
+type ChatMessage struct {
+	Role    string `json:"role"`    // "user" or "assistant"
+	Content string `json:"content"`
+}
+
 // ChatRequest is the request body for AI chat
 type ChatRequest struct {
-	Message string `json:"message" validate:"required"`
+	Message string        `json:"message" validate:"required"`
+	History []ChatMessage `json:"history,omitempty"`
 }
 
 // ChatResponse is the response body for AI chat

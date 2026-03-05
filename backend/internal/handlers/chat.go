@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/henry/banca-online/internal/config"
 	"github.com/henry/banca-online/internal/mcp"
@@ -96,21 +97,25 @@ func (h *ChatHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	// System prompt
 	systemPrompt := fmt.Sprintf(`You are a helpful banking assistant for an online banking system. You help users manage their bank accounts, check balances, make transfers, deposits, and withdrawals.
 
-IMPORTANT RULES:
-1. For ANY financial operation (deposit, withdrawal, transfer), you MUST first describe what you're about to do and ask the user to confirm before executing.
-2. When the user confirms (says "yes", "sí", "confirm", "dale", "ok", etc.), then execute the tool.
-3. Always be clear about amounts and account numbers.
-4. Respond in the same language the user uses (Spanish or English).
-5. Be concise but helpful.
+RULES:
+1. Execute financial operations (deposit, withdrawal, transfer) directly when the user requests them — do not ask for confirmation first.
+2. Always be clear about what operation you performed and show the result.
+3. Respond in the same language the user uses (Spanish or English).
+4. Be concise but helpful.
 
 Current user information:
 %s`, accountsInfo)
 
-	// Build conversation messages
+	// Build conversation messages: system + history + current user message
 	messages := []openRouterMessage{
 		{Role: "system", Content: systemPrompt},
-		{Role: "user", Content: req.Message},
 	}
+	for _, h := range req.History {
+		if h.Role == "user" || h.Role == "assistant" {
+			messages = append(messages, openRouterMessage{Role: h.Role, Content: h.Content})
+		}
+	}
+	messages = append(messages, openRouterMessage{Role: "user", Content: req.Message})
 
 	// Call OpenRouter with tool-use loop (max 5 iterations)
 	tools := h.toolRegistry.ToOpenRouterTools()
@@ -147,7 +152,6 @@ Current user information:
 				content = result.Content
 			}
 
-			// Add tool result to conversation
 			messages = append(messages, openRouterMessage{
 				Role:       "tool",
 				Content:    content,
@@ -182,11 +186,11 @@ func (h *ChatHandler) callOpenRouter(messages []openRouterMessage, tools interfa
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+h.cfg.OpenRouterAPIKey)
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	httpClient := &http.Client{Timeout: 110 * time.Second}
+	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("calling OpenRouter: %w", err)
 	}
