@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -84,10 +85,15 @@ func RateLimit(limit int, window time.Duration) func(http.Handler) http.Handler 
 	rl := newRateLimiter(limit, window)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Prefer X-Real-IP set by nginx/proxy, fallback to RemoteAddr
+			// Prefer X-Real-IP set by nginx/proxy, fallback to RemoteAddr (strip port)
 			ip := r.Header.Get("X-Real-IP")
 			if ip == "" {
-				ip = r.RemoteAddr
+				// RemoteAddr is "host:port" — extract just the host
+				if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+					ip = host
+				} else {
+					ip = r.RemoteAddr
+				}
 			}
 
 			if !rl.allow(ip) {
