@@ -1,14 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Transactions from './pages/Transactions'
-import History from './pages/History'
-import Layout from './components/Layout'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+
+import Layout from "./components/Layout";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Transactions from "./pages/Transactions";
+import History from "./pages/History";
 
 function RoutesWithAuth() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return (
@@ -17,7 +18,7 @@ function RoutesWithAuth() {
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-    )
+    );
   }
 
   return (
@@ -29,7 +30,7 @@ function RoutesWithAuth() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }
 
 export default function App() {
@@ -39,5 +40,5 @@ export default function App() {
         <RoutesWithAuth />
       </AuthProvider>
     </BrowserRouter>
-  )
+  );
 }
