@@ -13,4 +13,14 @@ export const transactionsApi = {
 
   transfer: (data: { from_account: string; to_account: string; amount: number; description?: string }) =>
     client.post<Transaction>('/transactions/transfer', data).then(r => r.data),
+
+  exportCSV: async () => {
+    const res = await client.get('/transactions/export', { responseType: 'blob' })
+    const url = URL.createObjectURL(res.data as Blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `historial-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  },
 }

@@ -3,29 +3,17 @@ import { accountsApi } from '../api/accounts'
 import { transactionsApi } from '../api/transactions'
 import { useAuth } from '../contexts/AuthContext'
 import type { Account, Transaction } from '../types'
-import Chat from '../components/Chat'
-import { TrendingUp, TrendingDown, ArrowRightLeft, CreditCard, Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { CreditCard, Loader2, Wallet, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
+import { formatCurrency, formatDate } from '../utils/format'
+import { getAccountConfig } from '../utils/accounts'
+import { getTxConfig } from '../utils/transactions'
+import StatCard from '../components/ui/StatCard'
+import Badge from '../components/ui/Badge'
+import EmptyState from '../components/ui/EmptyState'
+import PageHeader from '../components/ui/PageHeader'
 
-const ACCOUNT_COLORS: Record<string, string> = {
-  checking: 'bg-blue-500',
-  savings: 'bg-emerald-500',
-  investment: 'bg-purple-500',
-}
-
-const ACCOUNT_LABELS: Record<string, string> = {
-  checking: 'Cuenta Corriente',
-  savings: 'Cuenta de Ahorros',
-  investment: 'Cuenta de Inversión',
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
-function formatDate(ts: string) {
-  return new Date(ts).toLocaleDateString('es-HN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
+const CHART_COLORS = ['#7c3aed', '#10b981', '#3b82f6', '#f59e0b']
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -44,75 +32,104 @@ export default function Dashboard() {
   }, [])
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
+  const totalDeposits = transactions.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0)
+  const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0)
 
   const chartData = accounts.map(a => ({
-    name: ACCOUNT_LABELS[a.account_type] || a.account_type,
+    name: getAccountConfig(a.account_type).label.replace('Cuenta ', ''),
     balance: a.balance,
   }))
-
-  const txTypeIcon = (type: string) => {
-    if (type === 'deposit') return <TrendingUp size={16} className="text-emerald-600" />
-    if (type === 'withdrawal') return <TrendingDown size={16} className="text-red-500" />
-    return <ArrowRightLeft size={16} className="text-blue-500" />
-  }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 size={32} className="animate-spin text-blue-600" />
+        <Loader2 size={32} className="animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Welcome */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Bienvenido, {user?.full_name?.split(' ')[0]}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Aquí tienes un resumen de tus cuentas</p>
+      <PageHeader
+        title={`Hola, ${user?.full_name?.split(' ')[0]} 👋`}
+        subtitle="Aquí tienes un resumen de tus cuentas"
+      />
+
+      {/* Hero balance card */}
+      <div className="bg-linear-to-br from-violet-600 via-violet-600 to-violet-700 rounded-2xl p-6 text-white mb-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/5 rounded-2xl" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%)' }} />
+        <div className="relative">
+          <p className="text-violet-200 text-sm font-medium tracking-wide uppercase">Balance Total</p>
+          <p className="text-3xl sm:text-5xl font-bold mt-1 tracking-tight">{formatCurrency(totalBalance)}</p>
+          <p className="text-violet-200 text-sm mt-3">
+            {accounts.length} cuenta{accounts.length !== 1 ? 's' : ''} activa{accounts.length !== 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
 
-      {/* Total Balance */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white mb-6">
-        <p className="text-blue-200 text-sm font-medium">Balance Total</p>
-        <p className="text-4xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
-        <p className="text-blue-200 text-sm mt-2">{accounts.length} cuenta(s) activa(s)</p>
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatCard
+          title="Balance Total"
+          value={formatCurrency(totalBalance)}
+          Icon={Wallet}
+          iconClass="text-violet-600"
+          iconBgClass="bg-violet-50"
+        />
+        <StatCard
+          title="Depósitos (recientes)"
+          value={formatCurrency(totalDeposits)}
+          Icon={TrendingUp}
+          iconClass="text-emerald-600"
+          iconBgClass="bg-emerald-50"
+        />
+        <StatCard
+          title="Retiros (recientes)"
+          value={formatCurrency(totalWithdrawals)}
+          Icon={TrendingDown}
+          iconClass="text-red-500"
+          iconBgClass="bg-red-50"
+        />
       </div>
 
       {/* Account Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {accounts.map(account => (
-          <div key={account.account_number} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-10 h-10 rounded-xl ${ACCOUNT_COLORS[account.account_type] || 'bg-gray-500'} bg-opacity-10 flex items-center justify-center`}>
-                <CreditCard size={20} className={`text-${ACCOUNT_COLORS[account.account_type]?.replace('bg-', '') || 'gray-500'}`} />
+        {accounts.map(account => {
+          const cfg = getAccountConfig(account.account_type)
+          return (
+            <div key={account.account_number} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-10 h-10 rounded-xl ${cfg.bgColor} flex items-center justify-center`}>
+                  <CreditCard size={20} className={cfg.textColor} />
+                </div>
+                <span className="text-xs text-slate-400 font-mono">{account.account_number}</span>
               </div>
-              <span className="text-xs text-gray-500 font-mono">{account.account_number}</span>
+              <p className={`text-xs font-semibold uppercase tracking-wide ${cfg.textColor}`}>
+                {cfg.label}
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(account.balance)}</p>
+              <p className="text-xs text-slate-400 mt-1">{account.currency}</p>
             </div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-              {ACCOUNT_LABELS[account.account_type] || account.account_type}
-            </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(account.balance)}</p>
-            <p className="text-xs text-gray-400 mt-1">{account.currency}</p>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Balance Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Balance Bar Chart */}
         {accounts.length > 1 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">Balance por Cuenta</h2>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="balance" radius={[4, 4, 0, 0]}>
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <h2 className="text-sm font-semibold text-slate-700 mb-4">Balance por Cuenta</h2>
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  formatter={(v: number) => [formatCurrency(v), 'Balance']}
+                  contentStyle={{ borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                />
+                <Bar dataKey="balance" radius={[6, 6, 0, 0]}>
                   {chartData.map((_, i) => (
-                    <Cell key={i} fill={['#3b82f6', '#10b981', '#8b5cf6'][i % 3]} />
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -120,39 +137,78 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Transacciones Recientes</h2>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No hay transacciones aún</p>
-          ) : (
-            <div className="space-y-3">
-              {transactions.slice(0, 8).map((txn, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center">
-                      {txTypeIcon(txn.type)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-800 capitalize">
-                        {txn.type === 'deposit' ? 'Depósito' : txn.type === 'withdrawal' ? 'Retiro' : 'Transferencia'}
-                      </p>
-                      <p className="text-xs text-gray-400">{formatDate(txn.timestamp)}</p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-semibold ${
-                    txn.type === 'deposit' ? 'text-emerald-600' : 'text-red-500'
-                  }`}>
-                    {txn.type === 'deposit' ? '+' : '-'}{formatCurrency(txn.amount)}
-                  </span>
+        {/* Balance Distribution Pie */}
+        {accounts.length > 1 && (
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <h2 className="text-sm font-semibold text-slate-700 mb-4">Distribución de Balance</h2>
+            <ResponsiveContainer width="100%" height={190}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="balance"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  strokeWidth={0}
+                >
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(v: number) => [formatCurrency(v), 'Balance']}
+                  contentStyle={{ borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap justify-center gap-3 mt-2">
+              {chartData.map((entry, i) => (
+                <div key={entry.name} className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                  {entry.name}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+
+        {/* Recent Transactions */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Transacciones Recientes</h2>
+          {transactions.length === 0 ? (
+            <EmptyState Icon={ArrowRightLeft} message="No hay transacciones aún" description="Realiza tu primera operación" />
+          ) : (
+            <div className="space-y-3">
+              {transactions.slice(0, 8).map((txn, i) => {
+                const cfg = getTxConfig(txn.type)
+                const { Icon } = cfg
+                return (
+                  <div key={i} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full ${cfg.bgColor} border ${cfg.borderColor} flex items-center justify-center shrink-0`}>
+                        <Icon size={14} className={cfg.color} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-slate-800 truncate"><Badge type={txn.type} size="sm" /></p>
+                        <p className="text-xs text-slate-400 mt-0.5">{formatDate(txn.timestamp)}</p>
+                      </div>
+                    </div>
+                    <span className={`text-sm font-bold shrink-0 ${cfg.color}`}>
+                      {cfg.sign}{formatCurrency(txn.amount)}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
       </div>
-
-      <Chat />
     </div>
   )
 }

@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Building2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { getApiError } from '../utils/apiError'
+import AuthCard from '../components/ui/AuthCard'
+import FormField from '../components/ui/FormField'
+import ErrorBanner from '../components/ui/ErrorBanner'
 
 export default function Register() {
   const { register } = useAuth()
@@ -24,90 +28,67 @@ export default function Register() {
       await register(email, password, fullName)
       navigate('/')
     } catch (err: unknown) {
-      const msg = err && typeof err === 'object' && 'response' in err
-        ? (err as { response: { data: { error: string } } }).response?.data?.error
-        : 'Error al registrarse'
-      setError(msg || 'Error al registrarse')
+      setError(getApiError(err, 'Error al registrarse'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <Building2 className="h-12 w-12 text-blue-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">BancaHNL</h1>
-          <p className="text-gray-500 mt-1">Crea tu cuenta bancaria</p>
-        </div>
+    <AuthCard title="BancaHNL" subtitle="Crea tu cuenta bancaria gratis">
+      <h2 className="text-lg font-semibold text-slate-900 mb-5">Crear Cuenta</h2>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Crear Cuenta</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorBanner message={error} />
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
+        <FormField
+          label="Nombre Completo"
+          type="text"
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          placeholder="Juan Pérez"
+          required
+          autoComplete="name"
+        />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                required
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Juan Pérez"
-              />
-            </div>
+        <FormField
+          label="Correo Electrónico"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="tu@email.com"
+          required
+          autoComplete="email"
+        />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="tu@email.com"
-              />
-            </div>
+        <FormField
+          label="Contraseña"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Mínimo 6 caracteres"
+          required
+          minLength={6}
+          autoComplete="new-password"
+        />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Mínimo 6 caracteres"
-              />
-            </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm mt-2"
+        >
+          {loading && <Loader2 size={15} className="animate-spin" />}
+          {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+        </button>
+      </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-            >
-              {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-blue-600 hover:underline font-medium">
-              Inicia sesión
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+      <p className="text-center text-sm text-slate-500 mt-6">
+        ¿Ya tienes cuenta?{' '}
+        <Link to="/login" className="text-violet-600 hover:underline font-medium">
+          Inicia sesión
+        </Link>
+      </p>
+    </AuthCard>
   )
 }
+
